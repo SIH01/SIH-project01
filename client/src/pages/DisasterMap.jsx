@@ -7,6 +7,7 @@ import { DISASTER_TYPES, colorForType, radiusForSeverity } from "../utils/disast
 import { applyDisasterFilters, DEFAULT_FILTERS } from "../utils/filterDisasters";
 import DisasterFilters from "../components/DisasterFilters";
 import RiskSummary from "../components/RiskSummary";
+import PublicPageHeader from "../components/PublicPageHeader.jsx";
 
 const markerIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -187,7 +188,8 @@ export default function DisasterMap() {
   }
 
   return (
-    <div>
+    <div className="map-page">
+      <PublicPageHeader eyebrow="Disaster response" title="Disaster Map" accentWord="Map" description="Explore disaster records by location, severity, and search radius." icon="map" />
       <div
         style={{
           padding: "1.25rem 2rem",

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../services/api";
+import PublicPageHeader from "../components/PublicPageHeader.jsx";
 
 export default function Organizations() {
   const [orgs, setOrgs] = useState([]);
@@ -16,13 +17,7 @@ export default function Organizations() {
 
   return (
     <main className="directory-page organizations-page">
-      <div className="directory-heading">
-        <div><p className="eyebrow">Trusted response network</p><h1>Verified Organizations</h1></div>
-        <Link to="/organizations/register" className="btn btn-awareness">Register your organization</Link>
-      </div>
-      <p className="directory-intro">
-        Every organization listed here has been reviewed and verified by a DisasterShield admin.
-      </p>
+      <PublicPageHeader eyebrow="Trusted response network" title="Verified Organizations" accentWord="Organizations" description="Every organization listed here has been reviewed and verified by a DisasterShield admin." icon="building" action={<Link to="/organizations/register" className="btn btn-awareness">Register your organization</Link>} />
 
       {error && <div className="error-banner">{error}</div>}
       {loading ? (
