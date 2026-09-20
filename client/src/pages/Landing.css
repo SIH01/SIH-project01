@@ -1,5 +1,5 @@
 .ds-landing {
-  --bg: #111a24;
+  --bg: var(--bg-dark);
   --cream: #edf5fb;
   --amber: #72b9e8;
   --amber-light: #a6d9f5;
@@ -44,7 +44,7 @@
   background:
     radial-gradient(circle at 77% 32%, rgba(92,155,194,.24), transparent 31%),
     repeating-linear-gradient(112deg, rgba(255,255,255,.035) 0 1px, transparent 1px 7px),
-    linear-gradient(115deg, #0c131b 0%, #1b2732 48%, #263845 100%);
+    linear-gradient(115deg, var(--bg-dark) 0%, #0f1729 48%, #1a2942 100%);
 }
 .ds-landing .hero::before {
   content: "";
@@ -372,7 +372,7 @@
 }
 @media (max-width: 760px) {
   .ds-landing .hero { min-height: 620px; }
-  .ds-landing .hero::after { background: linear-gradient(90deg, rgba(20,10,7,.96), rgba(20,10,7,.7)); }
+  .ds-landing .hero::after { background: linear-gradient(90deg, rgba(10,14,26,.96), rgba(10,14,26,.7)); }
   .ds-landing .hero-copy { width: auto; margin: 0 22px; }
   .ds-landing h1 { font-size: clamp(43px, 13vw, 60px); letter-spacing: -2px; }
   .ds-landing .hero-description { font-size: 15px; }
