@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../services/api";
+import PublicPageHeader from "../components/PublicPageHeader.jsx";
 
 export default function Fundraising() {
   const [campaigns, setCampaigns] = useState([]);
@@ -31,11 +32,7 @@ export default function Fundraising() {
 
   return (
     <div className="admin-page">
-      <h1>Fundraising Campaigns</h1>
-      <p style={{ color: "#5c6673", marginBottom: "1.5rem" }}>
-        Every campaign shown here has been reviewed and verified by an administrator.
-        This prototype does not process real payments — contact the organization directly to contribute.
-      </p>
+      <PublicPageHeader eyebrow="Community fundraising" title="Fundraising Campaigns" accentWord="Campaigns" description="Every campaign shown here has been reviewed and verified by an administrator. This prototype does not process real payments — contact the organization directly to contribute." icon="megaphone" />
       {error && <div className="error-banner">{error}</div>}
       {loading ? (
         <p>Loading…</p>

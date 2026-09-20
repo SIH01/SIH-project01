@@ -1,4 +1,5 @@
 import React from "react";
+import PublicPageHeader from "../components/PublicPageHeader.jsx";
 
 function AboutCard({ eyebrow, title, children }) {
   return <section className="about-card"><span className="about-eyebrow">{eyebrow}</span><h2>{title}</h2><div className="about-card-copy">{children}</div></section>;
@@ -7,7 +8,7 @@ function AboutCard({ eyebrow, title, children }) {
 export default function About() {
   return (
     <main className="about-shell">
-      <header className="about-hero"><span className="about-eyebrow">About DisasterShield</span><h1>Practical information when a disaster makes everything harder to find.</h1><p>This project brings disaster records, verified relief organizations, help requests, and shelter information into one place without pretending that a prototype replaces official emergency services.</p></header>
+      <PublicPageHeader eyebrow="About DisasterShield" title="Practical information when a disaster makes everything harder to find." description="This project brings disaster records, verified relief organizations, help requests, and shelter information into one place without pretending that a prototype replaces official emergency services." icon="shield" />
       <div className="about-grid">
         <AboutCard eyebrow="Why we built this" title="Information is often scattered when people need it most."><p>During events such as the Assam floods, updates, assistance contacts, location details, and requests for help can live in separate posts, spreadsheets, and agency channels. DisasterShield is an early attempt to make that information easier to explore by place and easier for verified responders to act on.</p></AboutCard>
         <AboutCard eyebrow="How the data works" title="Different sources stay clearly labeled."><p>Historical disaster records can be imported from public databases such as the USGS Earthquake Catalog and reviewed by administrators. Live shelter and relief information comes from organizations whose details are reviewed and approved by DisasterShield admins before it is published. Demo records may still be present while the system is being expanded.</p></AboutCard>

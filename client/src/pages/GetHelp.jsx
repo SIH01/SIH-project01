@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../services/api";
+import PublicPageHeader from "../components/PublicPageHeader.jsx";
 
 const HELP_TYPES = [
   ["food", "Food", "🍲"], ["shelter", "Shelter", "⌂"], ["medical", "Medical", "✚"],
@@ -109,9 +110,8 @@ export default function GetHelp() {
 
   return (
     <main className="help-shell">
+      <PublicPageHeader eyebrow="Request support" title="Get Help" accentWord="Help" description="Request food, shelter, medical, mental-health, missing-person, or financial assistance. No account required - an admin will review and follow up." icon="hand" />
       <section className="help-card">
-        <h1>Get Help</h1>
-        <p className="help-intro">Request food, shelter, medical, mental-health, missing-person, or financial assistance. No account required - an admin will review and follow up.</p>
         {error && <div className="error-banner">{error}</div>}
         <form onSubmit={handleSubmit}>
           <fieldset className="help-fieldset"><legend>Type of help needed</legend><div className="help-type-grid" role="group" aria-label="Type of help needed">{HELP_TYPES.map(([value, label, icon]) => <label key={value} className={`help-type-tile ${hasHelpType(value) ? "selected" : ""}`}><input type="checkbox" name="help-type" value={value} checked={hasHelpType(value)} onChange={() => toggleHelpType(value)} /><span className="help-type-icon" aria-hidden="true">{icon}</span><span>{label}</span></label>)}</div></fieldset>

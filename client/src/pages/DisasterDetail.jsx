@@ -4,6 +4,7 @@ import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import { api } from "../services/api";
 import { colorForType } from "../utils/disasterOptions";
+import PublicPageHeader from "../components/PublicPageHeader.jsx";
 
 const markerIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -106,6 +107,7 @@ export default function DisasterDetail() {
 
   return (
     <main className="detail-shell">
+      <PublicPageHeader eyebrow="Disaster response" title={disaster.name} description={disaster.location_name || "Location not specified"} icon="map" />
       <div className="detail-card">
         <Link to="/map" className="detail-back-link">&larr; Back to Map</Link>
 
@@ -126,9 +128,6 @@ export default function DisasterDetail() {
               </span>
               <span className={severityClass(disaster.severity)}>{disaster.severity} severity</span>
             </div>
-
-            <h1 className="detail-title">{disaster.name}</h1>
-            <p className="detail-location-line">{disaster.location_name || "Location not specified"}</p>
 
             {isLiveInfo && (
               <div className="detail-alert">
