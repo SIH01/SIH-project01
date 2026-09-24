@@ -53,12 +53,6 @@ export default function Navbar() {
               <NavLink to="/admin/assistance" className={linkClass}>Help Requests</NavLink>
             </>
           )}
-          {user && user.role === "organization" && (
-            <>
-              <NavLink to="/organization/requests" className={linkClass}>Nearby Requests</NavLink>
-              <NavLink to="/organization/campaigns" className={linkClass}>Campaigns</NavLink>
-            </>
-          )}
           {user && <NotificationBell />}
           {user && <button onClick={handleLogout} className="nav-logout">Logout</button>}
         </div>

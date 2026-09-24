@@ -3,7 +3,7 @@ const pool = require("../db/pool");
 const SELECT_FIELDS = `
   id, user_id, name, type, description, website, email, phone, address,
   operating_areas, latitude, longitude, assistance_categories,
-  verification_status, documents, representative_name, representative_contact,
+  verification_status, documents, representative_name, representative_contact, razorpay_account_id,
   created_at, verified_at
 `;
 
@@ -45,15 +45,17 @@ async function updateByUserId(userId, data) {
        name = coalesce($1, name),
        type = coalesce($2, type),
        description = coalesce($3, description),
-       phone = coalesce($4, phone),
-       address = coalesce($5, address),
-       operating_areas = coalesce($6, operating_areas),
-       latitude = coalesce($7, latitude),
-       longitude = coalesce($8, longitude),
-       assistance_categories = coalesce($9, assistance_categories)
-     where user_id = $10
+       email = coalesce($4, email),
+       razorpay_account_id = coalesce($5, razorpay_account_id),
+       phone = coalesce($6, phone),
+       address = coalesce($7, address),
+       operating_areas = coalesce($8, operating_areas),
+       latitude = coalesce($9, latitude),
+       longitude = coalesce($10, longitude),
+       assistance_categories = coalesce($11, assistance_categories)
+     where user_id = $12
      returning ${SELECT_FIELDS}`,
-    [data.name || null, data.type || null, data.description ?? null, data.phone ?? null,
+    [data.name || null, data.type || null, data.description ?? null, data.email ?? null, data.razorpay_account_id ?? null, data.phone ?? null,
       data.address ?? null, data.operating_areas ?? null, data.latitude ?? null,
       data.longitude ?? null, data.assistance_categories || null, userId]
   );
