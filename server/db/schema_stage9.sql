@@ -25,3 +25,5 @@ create table if not exists fundraising_campaigns (
 );
 
 create index if not exists idx_campaigns_status on fundraising_campaigns (status);
+-- Persistent public donations are introduced in schema_stage18.sql.
+

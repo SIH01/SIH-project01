@@ -9,10 +9,6 @@ It helps people:
 - Submit a request for help.
 - Find approved nearby shelters.
 - Find verified relief organizations.
-	```powershell
-	cd server
-	npm run dev
-	```
 
 Administrators manage disaster records, alerts, help requests, organizations, and shelters.
 
@@ -59,11 +55,18 @@ Set these values:
 PORT=5001
 JWT_SECRET=use_a_long_random_secret
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@YOUR_DATABASE_HOST:5432/postgres
+
+# Razorpay Route. Keep secrets only in server/.env.
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
 ```
 
 Do not commit `server/.env` or expose the database password.
 
 For Supabase, use the Session Pooler connection string if the direct database host cannot be resolved.
+
+Razorpay Route also requires a verified Razorpay linked account for every organization that receives donations. Store that linked account ID in `organizations.razorpay_account_id`. Configure the Razorpay webhook URL as `https://YOUR_PUBLIC_HOST/api/campaigns/webhook/razorpay` and subscribe to `payment.captured`. Do not expose `RAZORPAY_KEY_SECRET` or `RAZORPAY_WEBHOOK_SECRET` in the client.
 
 ### 3. Create the database tables
 
@@ -84,6 +87,8 @@ Run these SQL files in the Supabase or PostgreSQL SQL editor, in this order:
 13. `server/db/schema_stage15.sql` - verified organization contact threads and messages.
 14. `server/db/schema_stage16.sql` - Get Help organization routing, assignments, and messages.
 15. `server/db/schema_stage17.sql` - organization missing-person case updates.
+16. `server/db/schema_stage18.sql` - campaign donation records used by the payment flow.
+17. `server/db/schema_stage19.sql` - Razorpay Route payment and organization account state.
 
 
 ### Verified organization contact portal
@@ -267,6 +272,67 @@ New shelters are always pending first. They do not appear in public shelter resu
 
 Editing an approved shelter sends it back to pending review.
 
+### Fundraising and payments
+
+Open `/fundraising` to browse verified active campaigns. Each campaign has a shareable URL such as `/fundraising/1` and shows its creator, goal, raised amount, progress percentage, status, and recent confirmed donors. Campaign detail pages poll the server so viewers see shared totals and donor updates.
+
+Organizations create campaigns from `/organization/campaigns`. Campaigns remain private until an administrator verifies the organization and activates the campaign. Administrators review campaigns at `/admin/campaigns`.
+
+Donations use Razorpay Route:
+
+1. The donor enters an optional name and a positive amount.
+2. The server checks that the campaign is active, the organization has a Razorpay linked account, and the amount does not exceed the remaining goal.
+3. The server creates a Razorpay order with a pending donation record.
+4. Razorpay Checkout handles the payment in the browser.
+5. The server verifies Razorpay's signed `payment.captured` webhook.
+6. Only after webhook verification does the donation become visible, increase `amount_raised`, and appear in Recent donors.
+
+Opening the form, entering a name, cancelling Checkout, or calling the browser callback does not create a confirmed donation. The payment webhook is the source of truth. The current policy closes donations at the campaign goal and does not allow overfunding.
+
+Payment endpoints:
+
+```text
+GET  /api/campaigns
+GET  /api/campaigns/:id
+POST /api/campaigns/:id/payment-order       public donor checkout start
+POST /api/campaigns/webhook/razorpay        Razorpay signed webhook
+POST /api/campaigns                          verified organization
+PUT  /api/campaigns/:id/verify               admin
+```
+
+Razorpay Route transfers funds to the organization's linked account. A payment being captured means Razorpay accepted the payment; bank settlement can still happen later according to Razorpay's settlement schedule. The application records the donor after capture, not after an unverified browser action.
+
+### Missing people
+
+Open `/missing-persons` to browse public reports and use the report form to submit a missing-person case. Reports support identity details, last-seen information, location, description, urgency, contact details, and optional attachments. Public submissions receive a confirmation reference. Administrators review, edit, publish, or remove reports from `/admin/missing-persons`.
+
+Verified organizations can review routed missing-person cases from their organization portal, add case updates, and escalate a case for administrator attention. Organization updates are append-only so the case history is preserved.
+
+### Direct contact with organizations
+
+From `/organizations`, a visitor can open a verified organization's profile and use `/organizations/:id/contact` to send a support request without needing an account. The system returns a `DS-XXXXXXXX` tracking ID. A citizen can continue the conversation from `/my-requests` using that ID or a citizen account.
+
+Messages are stored as a thread. Citizens can send follow-up messages, while verified organization staff can reply, change status, and resolve the thread. Current statuses are `Pending`, `Seen`, `In Progress`, and `Resolved`. Notifications are currently delivered through in-app polling and the notification bell; email and SMS are not enabled.
+
+### Citizen accounts
+
+Citizens can register and log in to track help requests and organization conversations. Public help and contact forms remain available without an account. Authenticated requests use a JWT bearer token, while organization portal sessions use a separate organization scope.
+
+### Organization response portal
+
+Verified organizations use `/org/login` or `/organization/login` and land at `/organization/dashboard`. The portal provides:
+
+- Dashboard statistics and organization profile management.
+- Nearby and assigned help requests.
+- Category, urgency, region, search, and claim filters.
+- Atomic request claiming to prevent duplicate response work.
+- Request conversations, replies, internal notes, and status updates.
+- Missing-person case updates and escalation.
+- Campaign creation and campaign amount management.
+- Shelter submission and shelter management.
+
+Get Help matching normalizes request categories against organization service tags and applies a 50 km coordinate check when both sides have coordinates. Administrator assignments bypass matching. A request claimed by another organization remains visible but cannot be claimed again.
+
 ## Admin Features
 
 Log in at `/admin/login`, then open `/admin/dashboard`.
@@ -440,6 +506,58 @@ PATCH /api/organizations/:id/verify   admin
 
 Admin and organization routes require a JWT access token. The frontend stores the token in local storage after login and sends it as a Bearer token.
 
+### Additional API groups
+
+```text
+# Missing people
+POST   /api/missing-persons/public
+GET    /api/missing-persons/public
+GET    /api/missing-persons                 admin
+PUT    /api/missing-persons/:id             admin
+DELETE /api/missing-persons/:id             admin
+
+# Fundraising
+GET    /api/campaigns
+GET    /api/campaigns/:id
+POST   /api/campaigns/:id/payment-order
+POST   /api/campaigns/webhook/razorpay
+GET    /api/campaigns/mine                 organization
+GET    /api/campaigns/admin/all             admin
+
+# Organization contact threads
+POST   /api/contact-threads
+GET    /api/contact-threads/mine
+GET    /api/contact-threads/mine/:id
+POST   /api/contact-threads/mine/:id/messages
+GET    /api/contact-threads/organization     organization
+GET    /api/contact-threads/organization/:id organization
+POST   /api/contact-threads/organization/:id/messages organization
+PATCH  /api/contact-threads/organization/:id/status organization
+
+# Organization operations
+GET    /api/org/dashboard/stats              organization
+GET    /api/org/requests                     organization
+GET    /api/org/requests/:id                 organization
+POST   /api/org/requests/:id/claim           organization
+POST   /api/org/requests/:id/messages        organization
+PATCH  /api/org/requests/:id/status          organization
+GET    /api/org/missing-persons              organization
+POST   /api/org/missing-persons/:id/updates organization
+POST   /api/org/missing-persons/:id/escalate organization
+
+# Notifications
+GET    /api/notifications                    authenticated user
+PUT    /api/notifications/:id/read           authenticated user
+PUT    /api/notifications/read-all            authenticated user
+
+# Administration
+GET    /api/admin/stats
+GET    /api/admin/audit-logs
+PATCH  /api/admin/help-requests/:id/assign
+```
+
+Most public APIs are rate-limited. Authentication, organization roles, admin roles, verification status, ownership checks, and server-side validation are enforced by the backend; client-side controls are not treated as security boundaries.
+
 ## Troubleshooting
 
 ### `EADDRINUSE: port 5001`
@@ -471,6 +589,22 @@ The map does not load all disasters immediately. Search for a place or click the
 ### The active-alert count is zero
 
 The count includes only records with status `Current` and an unset or future `active_until` value. Historical demo records are not active alerts.
+
+### Online donations are not configured
+
+Check these items:
+
+1. `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and `RAZORPAY_WEBHOOK_SECRET` exist in `server/.env`.
+2. `schema_stage18.sql` and `schema_stage19.sql` have been applied.
+3. The organization has a valid Razorpay Route linked-account ID in `organizations.razorpay_account_id`.
+4. Razorpay can reach `/api/campaigns/webhook/razorpay` over HTTPS.
+5. The Razorpay dashboard has the `payment.captured` event enabled and uses the same webhook secret.
+
+The browser must never mark a donation as successful by itself. If Checkout succeeds but the donor list has not changed, inspect the backend webhook logs and Razorpay webhook delivery status. The webhook may be delayed or the payment may still be unsettled.
+
+### Campaign page shows an old donor or total
+
+Campaign totals and confirmed donors are shared server-side. Refreshing the page does not reset them. A campaign detail page polls for updates every 10 seconds. Do not edit totals directly in the browser; investigate the payment status and webhook record instead.
 
 ## Important Safety Note
 

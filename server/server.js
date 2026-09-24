@@ -43,14 +43,17 @@ app.use(
         imgSrc: ["'self'", "data:", "*.tile.openstreetmap.org", "unpkg.com"],
         styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
         fontSrc: ["'self'", "fonts.gstatic.com"],
-        connectSrc: ["'self'", "nominatim.openstreetmap.org", "*.tile.openstreetmap.org"],
-        scriptSrc: ["'self'"],
+        connectSrc: ["'self'", "nominatim.openstreetmap.org", "*.tile.openstreetmap.org", "https://api.razorpay.com"],
+        scriptSrc: ["'self'", "https://checkout.razorpay.com"],
+        frameSrc: ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com"],
       },
     },
   })
 );
 app.use(cors());
-app.use(express.json({ limit: "6mb" }));
+app.use(express.json({ limit: "6mb", verify: (req, res, buffer) => {
+  if (req.originalUrl === "/api/campaigns/webhook/razorpay") req.rawBody = Buffer.from(buffer);
+} }));
 
 const generalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300 });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });

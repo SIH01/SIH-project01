@@ -13,14 +13,13 @@ import Organizations from "./pages/Organizations.jsx";
 import OrganizationLogin from "./pages/OrganizationLogin.jsx";
 import ContactOrganization from "./pages/ContactOrganization.jsx";
 import MyRequests from "./pages/MyRequests.jsx";
+import DirectMessaging from "./pages/DirectMessaging.jsx";
 import OrganizationPortal from "./pages/OrganizationPortal.jsx";
 import OrganizationProfile from "./pages/OrganizationProfile.jsx";
 import RegisterOrganization from "./pages/RegisterOrganization.jsx";
 import DisasterDetail from "./pages/DisasterDetail.jsx";
 import MissingPersons from "./pages/MissingPersons.jsx";
 import Fundraising from "./pages/Fundraising.jsx";
-import OrgCampaigns from "./pages/organization/OrgCampaigns.jsx";
-import OrganizationRequestMatching from "./pages/organization/OrganizationRequestMatching.jsx";
 import OrgShelterManager from "./pages/OrgShelterManager.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import AdminDisasterList from "./pages/admin/AdminDisasterList.jsx";
@@ -33,7 +32,6 @@ import AdminActiveAlerts from "./pages/admin/AdminActiveAlerts.jsx";
 import AdminMissingPersons from "./pages/admin/AdminMissingPersons.jsx";
 import AdminCampaigns from "./pages/admin/AdminCampaigns.jsx";
 import AdminAuditLogs from "./pages/admin/AdminAuditLogs.jsx";
-import OrgDashboardLayout from "./components/OrgDashboardLayout.jsx";
 import OrganizationAuthLayout from "./components/OrganizationAuthLayout.jsx";
 
 export default function App() {
@@ -54,6 +52,7 @@ export default function App() {
         <Route path="/get-help" element={<GetHelp />} />
         <Route path="/missing-persons" element={<MissingPersons />} />
         <Route path="/fundraising" element={<Fundraising />} />
+        <Route path="/fundraising/:campaignId" element={<Fundraising />} />
         <Route path="/organizations" element={<Organizations />} />
         <Route path="/organizations/register" element={<OrganizationAuthLayout><RegisterOrganization /></OrganizationAuthLayout>} />
         <Route path="/organizations/login" element={<OrganizationAuthLayout><OrganizationLogin /></OrganizationAuthLayout>} />
@@ -62,6 +61,7 @@ export default function App() {
         <Route path="/organizations/:id/contact" element={<ContactOrganization />} />
         <Route path="/organizations/:id" element={<OrganizationProfile />} />
         <Route path="/my-requests" element={<MyRequests />} />
+        <Route path="/messages/:id" element={<DirectMessaging />} />
 
         <Route path="/admin/dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/disasters" element={<ProtectedRoute role="admin"><AdminDisasterList /></ProtectedRoute>} />
@@ -78,10 +78,6 @@ export default function App() {
 
         <Route path="/organization/dashboard" element={<ProtectedRoute role="organization"><OrganizationPortal /></ProtectedRoute>} />
         <Route path="/org/dashboard" element={<ProtectedRoute role="organization"><OrganizationPortal /></ProtectedRoute>} />
-        <Route element={<ProtectedRoute role="organization"><OrgDashboardLayout /></ProtectedRoute>}>
-          <Route path="/organization/campaigns" element={<OrgCampaigns />} />
-          <Route path="/organization/requests" element={<OrganizationRequestMatching />} />
-        </Route>
       </Routes>
     </>
   );

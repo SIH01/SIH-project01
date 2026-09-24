@@ -151,7 +151,7 @@ async function getMyOrganization(req, res) {
 // PATCH /api/organizations/me — organization-owned profile fields only.
 async function updateMyOrganization(req, res) {
   const allowedTypes = ORG_TYPES;
-  const { name, type, description, phone, address, operating_areas, latitude, longitude, assistance_categories } = req.body || {};
+  const { name, type, description, email, razorpay_account_id, phone, address, operating_areas, latitude, longitude, assistance_categories } = req.body || {};
   if (type && !allowedTypes.includes(type)) return res.status(400).json({ error: "Invalid organization type." });
   if (assistance_categories && (!Array.isArray(assistance_categories) || assistance_categories.some((item) => !ASSISTANCE_CATEGORIES.includes(item)))) {
     return res.status(400).json({ error: "Invalid assistance category." });
@@ -164,7 +164,7 @@ async function updateMyOrganization(req, res) {
   }
   try {
     const organization = await updateByUserId(req.user.id, {
-      name: name?.trim(), type, description, phone, address, operating_areas,
+      name: name?.trim(), type, description, email: email?.trim(), razorpay_account_id: razorpay_account_id?.trim(), phone, address, operating_areas,
       latitude: parsedLatitude, longitude: parsedLongitude, assistance_categories,
     });
     if (!organization) return res.status(404).json({ error: "Organization profile not found." });

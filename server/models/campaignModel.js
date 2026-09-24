@@ -34,6 +34,102 @@ async function getById(id) {
   return rows[0] || null;
 }
 
+async function getDonations(campaignId) {
+  const { rows } = await pool.query(
+    `select id, donor_name, amount, created_at
+     from campaign_donations where campaign_id = $1 and status = 'confirmed'
+     order by created_at desc limit 12`,
+    [campaignId]
+  );
+  return rows;
+}
+
+async function createPendingDonation(campaignId, donorName, amount, gatewayOrderId) {
+  const { rows } = await pool.query(
+    `insert into campaign_donations (campaign_id, donor_name, amount, status, gateway_order_id)
+     values ($1, $2, $3, 'pending', $4) returning id, donor_name, amount, status, gateway_order_id`,
+    [campaignId, donorName || null, amount, gatewayOrderId]
+  );
+  return rows[0];
+}
+
+async function confirmDonation(gatewayOrderId, gatewayPaymentId) {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const { rows } = await client.query(
+      `select d.*, c.target_amount, c.amount_raised, c.status as campaign_status
+       from campaign_donations d join fundraising_campaigns c on c.id = d.campaign_id
+       where d.gateway_order_id = $1 for update`,
+      [gatewayOrderId]
+    );
+    const donation = rows[0];
+    if (!donation) { await client.query("rollback"); return null; }
+    if (donation.status === "confirmed") { await client.query("commit"); return donation; }
+    if (donation.campaign_status !== "Active" || Number(donation.amount_raised) + Number(donation.amount) > Number(donation.target_amount)) {
+      await client.query("rollback");
+      return { rejected: true };
+    }
+    const updated = await client.query(
+      `update campaign_donations set status = 'confirmed', gateway_payment_id = $1, confirmed_at = now() where id = $2 returning *`,
+      [gatewayPaymentId, donation.id]
+    );
+    await client.query(`update fundraising_campaigns set amount_raised = amount_raised + $1, updated_at = now() where id = $2`, [donation.amount, donation.campaign_id]);
+    await client.query("commit");
+    return updated.rows[0];
+  } catch (error) { await client.query("rollback"); throw error; }
+  finally { client.release(); }
+}
+
+async function addDonation(campaignId, donorName, amount) {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const campaignResult = await client.query(
+      `select ${SELECT_FIELDS} from fundraising_campaigns
+       where id = $1 and verification_status = 'Verified' and status = 'Active'
+       for update`,
+      [campaignId]
+    );
+    const campaign = campaignResult.rows[0];
+    if (!campaign) {
+      await client.query("rollback");
+      return null;
+    }
+    if (Number(campaign.amount_raised) >= Number(campaign.target_amount)) {
+      await client.query("rollback");
+      return { fullyFunded: true, campaign };
+    }
+    const remaining = Number(campaign.target_amount) - Number(campaign.amount_raised);
+    if (Number(amount) > remaining) {
+      await client.query("rollback");
+      return { exceedsGoal: true, campaign, remaining };
+    }
+
+    await client.query(
+      `insert into campaign_donations (campaign_id, donor_name, amount) values ($1, $2, $3)`,
+      [campaignId, donorName || null, amount]
+    );
+    const updatedResult = await client.query(
+      `update fundraising_campaigns set amount_raised = amount_raised + $1, updated_at = now()
+       where id = $2 returning ${SELECT_FIELDS}`,
+      [amount, campaignId]
+    );
+    const donationsResult = await client.query(
+      `select id, donor_name, amount, created_at from campaign_donations
+       where campaign_id = $1 order by created_at desc limit 12`,
+      [campaignId]
+    );
+    await client.query("commit");
+    return { campaign: updatedResult.rows[0], donations: donationsResult.rows };
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 async function create(data) {
   const {
     organization_id, disaster_id, title, description, target_amount,
@@ -76,4 +172,4 @@ async function addToAmountRaised(id, amount) {
   return rows[0] || null;
 }
 
-module.exports = { getPublic, getAll, getByOrganization, getById, create, setVerification, addToAmountRaised };
+module.exports = { getPublic, getAll, getByOrganization, getById, getDonations, createPendingDonation, confirmDonation, addDonation, create, setVerification, addToAmountRaised };
